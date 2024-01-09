@@ -11,6 +11,12 @@ class NewItem extends StatefulWidget {
 }
 
 class _NewItemState extends State<NewItem> {
+
+  final _formKey = GlobalKey<FormState>(); // different from value key. It is used to identify the form and validate it.
+
+  saveItem(){
+    _formKey.currentState!.validate(); // validates the form
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -20,6 +26,7 @@ class _NewItemState extends State<NewItem> {
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
+          key: _formKey, // used to identify the form and validate it.
           child: Column(children: [
             TextFormField(
               // instead of textfield, we use textformfield
@@ -28,7 +35,13 @@ class _NewItemState extends State<NewItem> {
                 labelText: 'Item Name',
               ),
               validator: (value) {
-                return "demo...";
+                if (value == null || 
+                    value.isEmpty || 
+                    value.trim().length <= 1 || 
+                    value.trim().length > 50) {
+                  return 'Please enter a valid item name.';
+                }
+                return null;
               },
             ),
             Row(
@@ -38,10 +51,20 @@ class _NewItemState extends State<NewItem> {
                 Expanded(
                   // Used it because both row and text form fiels and horizontally unconstrained.
                   child: TextFormField(
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: 'Quantity',
                     ),
                     initialValue: "1",
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                if (value == null || 
+                    value.isEmpty || 
+                    int.tryParse(value) == null || 
+                    int.tryParse(value)! <= 0) {
+                  return 'Please enter a valid positive number.';
+                }
+                return null;
+              },
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -79,7 +102,7 @@ class _NewItemState extends State<NewItem> {
                   width: 5,
                 ),
                 ElevatedButton(
-                  onPressed: () {},
+                  onPressed: saveItem,
                   child: const Text('Add Item'),
                 )
               ],
