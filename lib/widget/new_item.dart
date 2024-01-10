@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shopping_app/data/categories.dart';
 import 'package:shopping_app/models/category.dart';
+import 'package:shopping_app/models/grocery_item.dart';
 
 class NewItem extends StatefulWidget {
   const NewItem({super.key});
@@ -28,11 +29,16 @@ class _NewItemState extends State<NewItem> {
       // save only when value is valid.
       _formKey.currentState!.save(); // saves the form
 
-      print(_enteredName);
-      print(_enteredQuantity);
-      print(_selectedCategory.title);
-
       _formKey.currentState!.reset(); // resets the form  after saving it.
+
+      Navigator.of(context).pop(
+        GroceryItem(
+          id: DateTime.now().toString(), 
+          name: _enteredName, 
+          quantity: _enteredQuantity, 
+          category: _selectedCategory
+        )
+      ); // closes the current screen.  
     }
   }
 
