@@ -1,7 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:shopping_app/data/categories.dart';
 import 'package:shopping_app/models/category.dart';
 import 'package:shopping_app/models/grocery_item.dart';
+
+import 'package:http/http.dart' as http;
 
 class NewItem extends StatefulWidget {
   const NewItem({super.key});
@@ -22,23 +26,47 @@ class _NewItemState extends State<NewItem> {
 
   var _selectedCategory = categories[Categories.vegetables]!;
 
-  saveItem() {
+  saveItem() async{
     var validate = _formKey.currentState!.validate(); // validates the form
 
     if (validate) {
       // save only when value is valid.
       _formKey.currentState!.save(); // saves the form
 
-      _formKey.currentState!.reset(); // resets the form  after saving it.
+      final url = Uri.https(
+          'first-project-59e18-default-rtdb.asia-southeast1.firebasedatabase.app',
+          'grocery_items.json');
 
-      Navigator.of(context).pop(
-        GroceryItem(
-          id: DateTime.now().toString(), 
-          name: _enteredName, 
-          quantity: _enteredQuantity, 
-          category: _selectedCategory
-        )
-      ); // closes the current screen.  
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: json.encode(
+          {
+            'name': _enteredName,
+            'quantity': _enteredQuantity,
+            'category': _selectedCategory.title
+          },
+        ),
+      );
+
+      print(response.body);
+      print(response.statusCode);
+
+      if(!context.mounted){ // tells if the widget is the part of the screen(mounted) or not
+        return; // below code wont be executed if the widget is not mounted.
+      }
+
+      Navigator.of(context).pop(); // closes the current screen.  
+
+      // Navigator.of(context).pop(GroceryItem( // No need to send any data now.
+      //     id: DateTime.now().toString(),
+      //     name: _enteredName,
+      //     quantity: _enteredQuantity,
+      //     category: _selectedCategory)); // closes the current screen.
+
+      //_formKey.currentState!.reset(); // resets the form  after saving it.
     }
   }
 
@@ -101,35 +129,32 @@ class _NewItemState extends State<NewItem> {
                 const SizedBox(width: 8),
                 Expanded(
                   // same reason as above
-                  child: DropdownButtonFormField(items: [
-                    for (final category in categories
-                        .entries) // categories.entries providesv us with a list of map entries
-                      DropdownMenuItem(
-                        value: category.value,
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 16,
-                              height: 16,
-                              color: category.value.color,
+                  child: DropdownButtonFormField(
+                      items: [
+                        for (final category in categories
+                            .entries) // categories.entries providesv us with a list of map entries
+                          DropdownMenuItem(
+                            value: category.value,
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 16,
+                                  height: 16,
+                                  color: category.value.color,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(category.value.title)
+                              ],
                             ),
-                            const SizedBox(width: 8),
-                            Text(category.value.title)
-                          ],
-                        ),
-                      ),
-                  ], 
-
-                  value: _selectedCategory,
-                  
-                  onChanged: (value) {
-
-                    setState(() { // so currently selected value is updated on the screen.
-                        _selectedCategory = value as Category;
-                    });
-                  }
-                  
-                  ),
+                          ),
+                      ],
+                      value: _selectedCategory,
+                      onChanged: (value) {
+                        setState(() {
+                          // so currently selected value is updated on the screen.
+                          _selectedCategory = value as Category;
+                        });
+                      }),
                 )
               ],
             ),
