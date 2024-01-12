@@ -14,7 +14,7 @@ class GroceryList extends StatefulWidget {
 }
 
 class _GroceryListState extends State<GroceryList> {
-   List<GroceryItem> _groceryItems = [];
+  List<GroceryItem> _groceryItems = [];
 
   @override
   void initState() {
@@ -29,16 +29,17 @@ class _GroceryListState extends State<GroceryList> {
 
     final response = await http.get(url);
 
-    final Map<String, dynamic> listData =
-        json.decode(response.body);
+    final Map<String, dynamic> listData = json.decode(response.body);
 
-    final List<GroceryItem> _loadedItems = [];
+    final List<GroceryItem> loadedItems = [];
 
     for (final item in listData.entries) {
-    
-      final category = categories.entries.firstWhere((categoryItem) => categoryItem.value.title == item.value['category']).value;
+      final category = categories.entries
+          .firstWhere((categoryItem) => // used firstwhere to get the first item that matches the condition.
+              categoryItem.value.title == item.value['category'])
+          .value;// to get the category object by comparing the title of the category.
 
-      _loadedItems.add(GroceryItem(
+      loadedItems.add(GroceryItem(
           id: item.key,
           name: item.value['name'],
           quantity: item.value['quantity'],
@@ -46,18 +47,24 @@ class _GroceryListState extends State<GroceryList> {
     }
 
     setState(() {
-      _groceryItems = _loadedItems;
+      _groceryItems = loadedItems;
     });
   }
 
   void _addItem() async {
-    await Navigator.of(context).push<GroceryItem>(
+    final newItem = await Navigator.of(context).push<GroceryItem>(
       MaterialPageRoute(
         builder: (context) => const NewItem(),
       ),
     );
 
-    _loadItems();
+    if (newItem != null) { // did'nt call the get method to avoid redudant calls.
+      setState(() {
+        _groceryItems.add(newItem);
+      });
+    }else{
+      return;
+    }
   }
 
   @override

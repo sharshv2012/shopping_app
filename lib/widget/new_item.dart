@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shopping_app/data/categories.dart';
 import 'package:shopping_app/models/category.dart';
 import 'package:http/http.dart' as http;
+import 'package:shopping_app/models/grocery_item.dart';
 
 class NewItem extends StatefulWidget {
   const NewItem({super.key});
@@ -51,17 +52,20 @@ class _NewItemState extends State<NewItem> {
       print(response.body);
       print(response.statusCode);
 
+      final Map<String ,dynamic> resData = json.decode(response.body);
+      // we get the ID as name in the response body.
+
       if(!context.mounted){ // tells if the widget is the part of the screen(mounted) or not
         return; // below code wont be executed if the widget is not mounted.
       }
 
-      Navigator.of(context).pop(); // closes the current screen.  
+      //Navigator.of(context).pop(); // closes the current screen.  
 
-      // Navigator.of(context).pop(GroceryItem( // No need to send any data now.
-      //     id: DateTime.now().toString(),
-      //     name: _enteredName,
-      //     quantity: _enteredQuantity,
-      //     category: _selectedCategory)); // closes the current screen.
+      Navigator.of(context).pop(GroceryItem( // No need to send any data now.
+          id: resData['name'],
+          name: _enteredName,
+          quantity: _enteredQuantity,
+          category: _selectedCategory)); // closes the current screen.
 
       //_formKey.currentState!.reset(); // resets the form  after saving it.
     }
