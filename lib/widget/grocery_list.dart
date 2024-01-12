@@ -9,12 +9,16 @@ import 'package:http/http.dart' as http;
 class GroceryList extends StatefulWidget {
   const GroceryList({super.key});
 
+
   @override
   State<GroceryList> createState() => _GroceryListState();
 }
 
 class _GroceryListState extends State<GroceryList> {
   List<GroceryItem> _groceryItems = [];
+
+    var isLoading = true;
+
 
   @override
   void initState() {
@@ -48,6 +52,8 @@ class _GroceryListState extends State<GroceryList> {
 
     setState(() {
       _groceryItems = loadedItems;
+      isLoading = false;
+      
     });
   }
 
@@ -70,6 +76,10 @@ class _GroceryListState extends State<GroceryList> {
   @override
   Widget build(BuildContext context) {
     Widget content = const Center(child: Text("No Groceries Yet!"));
+
+    if (isLoading) {
+      content = const Center(child: CircularProgressIndicator());// loading spinner.
+    }
 
     if (_groceryItems.isNotEmpty) {
       content = ListView.builder(

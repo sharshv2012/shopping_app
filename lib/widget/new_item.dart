@@ -24,11 +24,19 @@ class _NewItemState extends State<NewItem> {
 
   var _selectedCategory = categories[Categories.vegetables]!;
 
-  saveItem() async{
+  var isSending = false;
+
+  saveItem() async {
     var validate = _formKey.currentState!.validate(); // validates the form
 
     if (validate) {
       // save only when value is valid.
+
+      setState(() {
+        // needed setState so the buttons can be disabled.
+        isSending = true;
+      });
+
       _formKey.currentState!.save(); // saves the form
 
       final url = Uri.https(
@@ -52,16 +60,18 @@ class _NewItemState extends State<NewItem> {
       print(response.body);
       print(response.statusCode);
 
-      final Map<String ,dynamic> resData = json.decode(response.body);
+      final Map<String, dynamic> resData = json.decode(response.body);
       // we get the ID as name in the response body.
 
-      if(!context.mounted){ // tells if the widget is the part of the screen(mounted) or not
+      if (!context.mounted) {
+        // tells if the widget is the part of the screen(mounted) or not
         return; // below code wont be executed if the widget is not mounted.
       }
 
-      //Navigator.of(context).pop(); // closes the current screen.  
+      //Navigator.of(context).pop(); // closes the current screen.
 
-      Navigator.of(context).pop(GroceryItem( // No need to send any data now.
+      Navigator.of(context).pop(GroceryItem(
+          // No need to send any data now.
           id: resData['name'],
           name: _enteredName,
           quantity: _enteredQuantity,
@@ -166,16 +176,25 @@ class _NewItemState extends State<NewItem> {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 TextButton(
-                    onPressed: () {
-                      _formKey.currentState!.reset(); // resets the form
-                    },
+                    onPressed: isSending
+                        ? null
+                        : () {
+                            // if isSending is true, then the button is disabled.
+                            _formKey.currentState!.reset(); // resets the form
+                          },
                     child: const Text('Reset')),
                 const SizedBox(
                   width: 5,
                 ),
                 ElevatedButton(
-                  onPressed: saveItem,
-                  child: const Text('Add Item'),
+                  onPressed: isSending ? null : saveItem,
+                  child: isSending
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(),
+                        )
+                      : const Text('Add Item'),
                 )
               ],
             )
