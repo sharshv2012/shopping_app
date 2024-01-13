@@ -9,7 +9,6 @@ import 'package:http/http.dart' as http;
 class GroceryList extends StatefulWidget {
   const GroceryList({super.key});
 
-
   @override
   State<GroceryList> createState() => _GroceryListState();
 }
@@ -17,8 +16,9 @@ class GroceryList extends StatefulWidget {
 class _GroceryListState extends State<GroceryList> {
   List<GroceryItem> _groceryItems = [];
 
-    var isLoading = true;
+  var isLoading = true;
 
+  var errorHappened = false;
 
   @override
   void initState() {
@@ -33,15 +33,24 @@ class _GroceryListState extends State<GroceryList> {
 
     final response = await http.get(url);
 
+    final statusCode = response.statusCode;
+
+    if (statusCode >= 400) {
+      setState(() {
+        errorHappened = true;
+      });
+    }
+
     final Map<String, dynamic> listData = json.decode(response.body);
 
     final List<GroceryItem> loadedItems = [];
 
     for (final item in listData.entries) {
       final category = categories.entries
-          .firstWhere((categoryItem) => // used firstwhere to get the first item that matches the condition.
-              categoryItem.value.title == item.value['category'])
-          .value;// to get the category object by comparing the title of the category.
+          .firstWhere(
+              (categoryItem) => // used firstwhere to get the first item that matches the condition.
+                  categoryItem.value.title == item.value['category'])
+          .value; // to get the category object by comparing the title of the category.
 
       loadedItems.add(GroceryItem(
           id: item.key,
@@ -53,7 +62,6 @@ class _GroceryListState extends State<GroceryList> {
     setState(() {
       _groceryItems = loadedItems;
       isLoading = false;
-      
     });
   }
 
@@ -64,12 +72,63 @@ class _GroceryListState extends State<GroceryList> {
       ),
     );
 
-    if (newItem != null) { // did'nt call the get method to avoid redudant calls.
+    if (newItem != null) {
+      // did'nt call the get method to avoid redudant calls.
       setState(() {
         _groceryItems.add(newItem);
       });
-    }else{
+    } else {
       return;
+    }
+  }
+
+  void _deleteItem(GroceryItem item) async {
+    final index = _groceryItems.indexOf(item);
+    var undoPressed = false;
+
+    setState(() {
+      _groceryItems.remove(item);
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Item deleted!'),
+        duration: Duration(seconds: 2),
+        action: SnackBarAction(
+          label: "Undo",
+          onPressed: () {
+            undoPressed = true;
+            setState(() {
+              _groceryItems.insert(index, item);
+            });
+          },
+        ),
+      ),
+    );
+
+    await Future.delayed(const Duration(seconds: 2));
+
+    if (undoPressed) {
+      return;
+    }
+
+    final url = Uri.https(
+      'first-project-59e18-default-rtdb.asia-southeast1.firebasedatabase.app',
+      'grocery_items/${item.id}.json',
+    );
+
+    final response = await http.delete(url);
+
+    if (response.statusCode >= 400) {
+      setState(() {
+        _groceryItems.insert(index, item);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Deletion failed!'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      });
     }
   }
 
@@ -78,7 +137,12 @@ class _GroceryListState extends State<GroceryList> {
     Widget content = const Center(child: Text("No Groceries Yet!"));
 
     if (isLoading) {
-      content = const Center(child: CircularProgressIndicator());// loading spinner.
+      content =
+          const Center(child: CircularProgressIndicator()); // loading spinner.
+    }
+
+    if (errorHappened) {
+      content = const Center(child: Text("An error occured! Try again later."));
     }
 
     if (_groceryItems.isNotEmpty) {
@@ -87,7 +151,7 @@ class _GroceryListState extends State<GroceryList> {
             .length, // so flutter knows how often the builder will be called.
         itemBuilder: (context, index) => Dismissible(
           onDismissed: (direction) => setState(() {
-            _groceryItems.removeAt(index);
+            _deleteItem(_groceryItems[index]);
           }),
           key: ValueKey(_groceryItems[index].id),
           child: ListTile(
